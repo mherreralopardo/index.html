@@ -535,7 +535,7 @@ function getEmbeddedRPlayers() {
 async function loadRPlayersFromSheets() {
   try {
     const url = APPS_SCRIPT_URL + '?tab=resumen';
-    const resp = await fetch(url, { signal: AbortSignal.timeout(9000) });
+    const resp = await fetch(url, { signal: AbortSignal.timeout(9000), redirect: 'follow' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const json = await resp.json();
     if (!json.ok || !Array.isArray(json.jugadores) || json.jugadores.length === 0) {
@@ -933,6 +933,7 @@ async function visLoad() {
   try {
     const resp = await fetch(APPS_SCRIPT_URL + '?tab=visorias', {
       signal: AbortSignal.timeout(10000),
+      redirect: 'follow',
       method: 'GET'
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);

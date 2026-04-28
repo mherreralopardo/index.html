@@ -512,12 +512,15 @@ body { font-family: 'Barlow', sans-serif; background: var(--gf); color: var(--td
 <script>
 // ══ CONFIGURACIÓN GLOBAL ══════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxywmbzDqMImKd1ivCGf7ObygTh0QgnrBdXdEDHn1bbH70YZm61O8fMmOk_ACj7Ep-Y/exec';
+// ══ ESTADO GLOBAL ══════════════════════════════════════════════
+let rPlayers = [];
+let visData = [];
+let visFilters = { pos: 'ALL', estilo: 'ALL', rating: '0' };
 // ══════════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════
 //  DATA
 // ══════════════════════════════════════
-let rPlayers = [];
 
 // ── Datos embebidos (fallback si Apps Script no responde) ──────
 function getEmbeddedRPlayers() {
@@ -545,24 +548,33 @@ async function loadRPlayersFromSheets() {
     if (!json.ok || !Array.isArray(json.jugadores) || json.jugadores.length === 0) {
       throw new Error('Respuesta vacía del Apps Script');
     }
-    // Mapear al formato interno del dashboard
-    rPlayers = json.jugadores.map(j => ({
-      name:        j.name,
-      club:        j.club,
-      liga:        j.liga,
-      pos:         j.pos,
-      partidosTot: j.partidosTot,
-      conv:        j.conv,
-      jugados:     j.jugados,
-      titular:     j.titular,
-      suplente:    j.suplente,
-      gols:        j.gols,
-      asist:       j.asist,
-      amar:        j.amar,
-      min:         j.min,
-      posMin:      j.posMin || 1,
-      pct:         j.pct
-    }));
+    // Mapear al formato interno — filtrar filas sin datos reales
+    const VALID_POS = ['ARQ','DEF','LAT','MED','EXT','DEL'];
+    rPlayers = json.jugadores
+      .filter(j =>
+        j.name && j.name.length > 2 &&           // tiene nombre
+        j.name !== 'Jugador' &&                   // no es encabezado
+        j.club && j.club !== 'Club Actual' &&      // no es encabezado
+        VALID_POS.includes(j.pos) &&              // posición válida
+        (j.conv > 0 || j.jugados > 0)            // tiene datos reales
+      )
+      .map(j => ({
+        name:        j.name,
+        club:        j.club,
+        liga:        j.liga,
+        pos:         j.pos,
+        partidosTot: j.partidosTot,
+        conv:        j.conv,
+        jugados:     j.jugados,
+        titular:     j.titular,
+        suplente:    j.suplente,
+        gols:        j.gols,
+        asist:       j.asist,
+        amar:        j.amar,
+        min:         j.min,
+        posMin:      j.posMin || 1,
+        pct:         j.pct
+      }));
     console.log('Resumen cargado desde Sheets:', rPlayers.length, 'jugadores');
   } catch(e) {
     console.warn('Apps Script no disponible, usando datos embebidos:', e.message);
@@ -913,8 +925,7 @@ sRender();
 // ══════════════════════════════════════
 //  VISORÍAS SCOUTING — live from Sheets
 // ══════════════════════════════════════
-let visData = [];
-let visFilters = { pos: 'ALL', estilo: 'ALL', rating: '0' };
+// visData y visFilters declarados al inicio del script
 
 async function visLoad() {
   const btn = document.getElementById('refresh-btn');

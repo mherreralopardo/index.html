@@ -278,8 +278,9 @@ body { font-family: 'Barlow', sans-serif; background: var(--gf); color: var(--td
 .vis-top { background: var(--vd); padding: 12px 14px 10px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .vis-name { font-family: 'Barlow Condensed',sans-serif; font-weight: 900; font-size: 17px; color: #fff; line-height: 1; margin-bottom: 3px; }
 .vis-pos { font-size: 10px; color: rgba(255,255,255,0.6); }
-.vis-stars { display: flex; gap: 2px; margin-top: 4px; }
-.vis-star { font-size: 11px; }
+.vis-stars { display: flex; gap: 3px; margin-top: 5px; align-items: center; }
+.vis-star { font-size: 16px; }
+.vis-rating-num { font-size: 12px; font-weight: 800; color: var(--am); margin-left: 5px; font-family: 'Barlow Condensed',sans-serif; }
 .vis-star.on { color: var(--am); }
 .vis-star.off { color: rgba(255,255,255,0.2); }
 .vis-estilo { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
@@ -1083,7 +1084,7 @@ function visRender() {
   let data = visData.filter(p => {
     if (visFilters.pos !== 'ALL' && !p.pos.includes(visFilters.pos)) return false;
     if (visFilters.estilo !== 'ALL' && p.estilo !== visFilters.estilo) return false;
-    if (visFilters.rating !== '0' && p.rating < parseInt(visFilters.rating)) return false;
+    if (visFilters.rating !== '0' && Number(p.rating) < Number(visFilters.rating)) return false;
     return true;
   });
   data.sort((a,b) => {
@@ -1097,7 +1098,7 @@ function visRender() {
   document.getElementById('vis-count').textContent = `${data.length} jugadores`;
 
   const estiloClass = { 'Si': 'si', 'No': 'no', 'Parcialmente': 'parc' };
-  const estiloLabel = { 'Si': 'Calza', 'No': 'No calza', 'Parcialmente': 'Parcial' };
+  const estiloLabel = { 'Si': 'Estilo DyJ', 'No': 'No es del estilo DyJ', 'Parcialmente': 'Parcialmente estilo DyJ' };
 
   document.getElementById('vis-grid').innerHTML = data.map(p => {
     const stars = Array.from({length:5}, (_,i) =>
@@ -1110,7 +1111,7 @@ function visRender() {
         <div>
           <div class="vis-name">${p.nombre}</div>
           <div class="vis-pos">${p.pos}${p.rol ? ' · ' + p.rol : ''}</div>
-          <div class="vis-stars">${stars}</div>
+          <div class="vis-stars">${stars}<span class="vis-rating-num">${p.rating}/5</span></div>
         </div>
         <div class="vis-estilo">
           <div class="estilo-dot ${ec}"></div>
@@ -1119,12 +1120,12 @@ function visRender() {
       </div>
       <div class="vis-body">
         <div class="vis-row">
-          <div class="vis-ico">🏟</div>
-          <div><div class="vis-lbl">Club · Liga</div><div class="vis-val">${p.equipo}${p.liga ? ' — ' + p.liga : ''}</div></div>
-        </div>
-        <div class="vis-row">
           <div class="vis-ico">📈</div>
           <div><div class="vis-lbl">Actualidad · Proyección</div><div class="vis-val">${p.actualidad || '—'} → ${p.proyeccion || '—'}</div></div>
+        </div>
+        <div class="vis-row">
+          <div class="vis-ico">🏟</div>
+          <div><div class="vis-lbl">Club · Liga</div><div class="vis-val">${p.equipo}${p.liga ? ' — ' + p.liga : ''}</div></div>
         </div>
         <div class="vis-tag-row">
           ${p.nac ? `<span class="vis-tag">🌎 ${p.nac}</span>` : ''}
@@ -1157,12 +1158,9 @@ function parseVisDataFromJSON(jsonData) {
 
 // Initialize data on page load
 document.addEventListener('DOMContentLoaded', () => {
-  // Cargar resumen con datos embebidos primero, luego live
-  rPlayers = getEmbeddedRPlayers();
-  rRender();
-  updateTopScorers();
+  // Cargar live desde Sheets (con fallback a embebidos)
   loadRPlayersFromSheets();
-  // Precargar visorías en background para que estén listas al navegar
+  // Precargar visorías en background
   visLoad();
 });
 </script>
